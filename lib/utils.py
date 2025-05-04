@@ -7,6 +7,9 @@ RED = "\033[0;31m"
 GREEN = "\033[0;32m"
 END = "\033[0m"
 
+LOGFMT = "%(name)s@%(levelname)s [%(asctime)s.%(msecs)04d]: %(message)s"
+DATEFMT = "%I:%M:%S"
+
 
 Addr = tuple[str, int]
 
@@ -39,7 +42,7 @@ def setup_file_logger(suffix: str, name=None) -> logging.Logger:
     logger.setLevel(logging.INFO)
 
     handler = logging.FileHandler(f"log_{suffix}.txt", mode="w")
-    formatter = logging.Formatter("%(message)s")
+    formatter = logging.Formatter(LOGFMT, datefmt=DATEFMT)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.propagate = False
@@ -58,20 +61,25 @@ def setup_logger(verbosity: int, name=None) -> logging.Logger:
         name = __name__
     logger = logging.getLogger(name)
     # Set the logging level based on verbosity
+    level = arg_verbosity(verbosity)
+    logger.setLevel(level)
+    # Create a console handler and set its level
+    ch = logging.StreamHandler(sys.stderr)
+    # Create a formatter
+    formatter = logging.Formatter(LOGFMT, datefmt=DATEFMT)
+    # Add formatter to ch
+    ch.setFormatter(formatter)
+    # Add ch to logger
+    logger.addHandler(ch)
+    return logger
+
+
+def arg_verbosity(verbosity: int):
+    level = logging.NOTSET
     if verbosity == 0:
         level = logging.WARNING
     elif verbosity == 1:
         level = logging.INFO
     else:
         level = logging.DEBUG
-    logger.setLevel(level)
-    # Create a console handler and set its level
-    ch = logging.StreamHandler(sys.stderr)
-    ch.setLevel(level)
-    # Create a formatter
-    formatter = logging.Formatter("%(name)s@%(levelname)s: %(message)s")
-    # Add formatter to ch
-    ch.setFormatter(formatter)
-    # Add ch to logger
-    logger.addHandler(ch)
-    return logger
+    return level
